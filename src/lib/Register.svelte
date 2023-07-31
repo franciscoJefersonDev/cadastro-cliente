@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { getContext } from 'svelte';
+  import { getContext } from "svelte";
+  import { onMount } from "svelte";
   import axios from "axios";
   export let data;
-  const navigate: any = getContext('navigate');
+  const navigate: any = getContext("navigate");
+
   const on_change_type_person = (selected_type_person: string) => {
     data.tipo = selected_type_person;
   };
@@ -16,14 +18,15 @@
       .then(async (response) => {
         if (response.status !== 200) return;
         if (response.data.erro) return;
-        console.log(response.data);
         data.estado = response.data.uf;
         await get_cities_from_state();
         data.bairro = response.data.bairro;
         data.rua = response.data.logradouro;
+        data.cidade = response.data.localidade;
         document.querySelector("#states ").value = response.data.uf;
         document.querySelector("#city").value = response.data.localidade;
       });
+    console.log(data);
   };
   const get_states = () => {
     axios
@@ -45,7 +48,6 @@
         `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${data.estado}/municipios`
       )
       .then((response) => {
-        console.log(response.data);
         response.data.forEach((item, index) => {
           const select_element = document.querySelector("#city");
           index === 0 ? (select_element.innerHtml = "") : null;
@@ -89,8 +91,21 @@
     }
     event.target.classList.add("was-validated");
   };
-  on_change_type_person("Pessoa física");
-  on_change_sex_person("Masculino");
+  onMount(async () => {
+    await get_cities_from_state();
+    if (data.tipo === "Pessoa física") {
+      document.querySelector("#pessoa-fisica").checked = true;
+      if (data.sexo === "Masculino") {
+        document.querySelector("#masculino").checked = true;
+      } else {
+        document.querySelector("#feminino").checked = true;
+      }
+    } else {
+      document.querySelector("#pessoa-juridica").checked = true;
+    }
+    document.querySelector("#states").value = data.estado;
+    document.querySelector("#city").value = data.cidade;
+  });
   get_states();
 </script>
 
@@ -128,7 +143,6 @@
             name="tipo"
             id="pessoa-fisica"
             value="Pessoa física"
-            checked
             on:change={({ target }) => on_change_type_person(target.value)}
           />
           Pessoa física
@@ -179,22 +193,22 @@
           <div class="col-md-6">
             <div class="row">
               <span>Sexo</span>
-              <label class="form-label" for="masc">
+              <label class="form-label" for="masculino">
                 <input
                   type="radio"
                   name="sexo"
-                  id="masc"
+                  id="masculino"
                   value="Masculino"
                   checked
                   on:change={({ target }) => on_change_sex_person(target.value)}
                 />
                 Masculino
               </label>
-              <label class="form-label" for="femi">
+              <label class="form-label" for="feminino">
                 <input
                   type="radio"
                   name="sexo"
-                  id="femi"
+                  id="feminino"
                   value="Feminino"
                   on:change={({ target }) => on_change_sex_person(target.value)}
                 />
@@ -400,7 +414,7 @@
           bind:value={data.complemento}
         />
       </div>
-      <div class="col-12 d-flex justify-content-center">
+      <div class="col-12 d-flex justify-content-start">
         <button
           class="btn btn-danger bg-gradient d-flex flex-row justify-content-center align-items-center gap-3"
           type="submit"

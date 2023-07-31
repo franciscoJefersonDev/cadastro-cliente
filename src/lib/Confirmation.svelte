@@ -1,8 +1,35 @@
 <script lang="ts">
   import { getContext } from "svelte";
-  import axios from "axios";
   export let data;
   const navigate: any = getContext("navigate");
+  let loading = false;
+
+  const send_user_registry = () => {
+    if (loading) return;
+    document.querySelector(".spinner-border").classList.remove("d-none");
+    document.querySelector(".btn").disabled = true;
+    loading = true;
+    fetch("https://api.sheetmonkey.io/form/hEugamcYVtBwkSyE1Ur73p", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then((result) => {
+        document.querySelector(".spinner-border").classList.add("d-none");
+        document.querySelector(".btn").disabled = false;
+        loading = false;
+        if (result.status === 200) return navigate("success");
+        navigate("error")
+      })
+      .catch((error) => {
+        document.querySelector(".spinner-border").classList.add("d-none");
+        document.querySelector(".btn").disabled = false;
+        loading = false;
+        navigate("error")
+      });
+  };
 </script>
 
 <main class="register-component">
@@ -151,66 +178,42 @@
       <div class="col-md-6">
         <label for="cep" class="form-label">CEP</label>
         <div class="input-group">
-          <input type="text" class="form-control" bind:value={data.cep} />
-          <button
-            class="btn btn-danger"
-            type="button"
-            on:click={() => verify_cep()}>Verificar</button
-          >
+          <input
+            type="text"
+            class="form-control"
+            bind:value={data.cep}
+            readonly
+          />
         </div>
       </div>
     </div>
     <div class="col-md-6">
-      <label class="form-label">
-        Tipo de local
-        <span class="text-danger">*</span>
-      </label>
-      <select
-        class="form-control select"
-        on:change={({ target }) => {
-          data.tipo_de_local = target.value;
-          get_district_from_citie();
-        }}
-      >
-        <option value="Zona urbana" label="Zona urbana" />
-        <option value="Zona rural" label="Zona rural" />
-      </select>
+      <label class="form-label"> Tipo de local </label>
+      <input
+        type="text"
+        class="form-control"
+        bind:value={data.tipo_de_local}
+        readonly
+      />
     </div>
     <div class="row">
       <div class="col-md-6">
-        <label class="form-label"
-          >Estado <span class="text-danger">*</span></label
-        >
-        <select
-          class="form-control select"
-          name="states"
-          id="states"
-          on:change={({ target }) => {
-            data.estado = target.value;
-            get_cities_from_state();
-          }}
-          required
-        >
-          <option value="" label=" " />
-        </select>
+        <label class="form-label">Estado</label>
+        <input
+          type="text"
+          class="form-control"
+          bind:value={data.estado}
+          readonly
+        />
       </div>
       <div class="col-md-6">
-        <label class="form-label">
-          Cidade
-          <span class="text-danger">*</span>
-        </label>
-        <select
-          class="form-control select"
-          name="city"
-          id="city"
-          on:change={({ target }) => {
-            data.cidade = target.value;
-            get_district_from_citie();
-          }}
-          required
-        >
-          <option value="" label=" " />
-        </select>
+        <label class="form-label">Cidade</label>
+        <input
+          type="text"
+          class="form-control"
+          bind:value={data.cidade}
+          readonly
+        />
       </div>
     </div>
     {#if data.tipo_de_local === "Zona urbana"}
@@ -222,6 +225,7 @@
             class="form-control"
             id="neighborhood"
             bind:value={data.bairro}
+            readonly
           />
         </div>
         <div class="col-md-6">
@@ -231,6 +235,7 @@
             class="form-control"
             id="street"
             bind:value={data.rua}
+            readonly
           />
         </div>
         <div class="col-md-6">
@@ -240,24 +245,19 @@
             class="form-control"
             id="number"
             bind:value={data.numero}
+            readonly
           />
         </div>
       </div>
     {:else}
       <div class="col-md-6">
-        <label class="form-label">
-          Distrito
-          <span class="text-danger">*</span>
-        </label>
-        <select
-          class="form-control select"
-          name="district"
-          id="district"
-          on:change={({ target }) => (data.distrito = target.value)}
-          required
-        >
-          <option value="" label=" " />
-        </select>
+        <label class="form-label">Distrito</label>
+        <input
+          type="text"
+          class="form-control"
+          bind:value={data.distrito}
+          readonly
+        />
       </div>
       <div class="col-md-6">
         <label for="rural-local" class="form-label"
@@ -268,6 +268,7 @@
           class="form-control"
           id="rural-local"
           bind:value={data.localidade_fazenda_sitio}
+          readonly
         />
       </div>
     {/if}
@@ -279,17 +280,24 @@
         id="complement"
         placeholder="Complemento..."
         bind:value={data.complemento}
+        readonly
       />
     </div>
-    <div class="col-12 d-flex justify-content-center">
+    <div class="col-12 d-flex justify-content-start gap-2 mt-1">
+      <button
+        class="btn btn-secondary bg-gradient d-flex flex-row justify-content-center align-items-center gap-3"
+        on:click={() => navigate("register")}
+      >
+        Editar
+      </button>
       <button
         class="btn btn-danger bg-gradient d-flex flex-row justify-content-center align-items-center gap-3"
-        type="submit"
+        on:click={() => send_user_registry()}
       >
         <div class="spinner-border d-none" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        Continuar
+        Enviar cadastro
       </button>
     </div>
   </div>
